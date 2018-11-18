@@ -17,7 +17,7 @@ else
 	endif
 endif
 
-PROGRAM_NAME=Snake
+PROGRAM_NAME=main
 
 #run target to compile and build, and then launch the executable
 run: $(PROGRAM_NAME)
