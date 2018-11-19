@@ -1,8 +1,3 @@
-#include <math.h>
-#include <time.h>
-#include <vector>
-#include <list>
-
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -12,6 +7,12 @@
 #include <GL/glu.h>
 #include <GL/freeglut.h>
 #endif
+
+#include <math.h>
+#include <time.h>
+#include <vector>
+#include <algorithm>
+#include <list>
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -39,10 +40,10 @@ float camPos[] = {100, -100, 300}; // camera's position
 
 bool findIndex(std::vector<int> v, int x)
 {
-    if (std::find(v.begin(), v.end(), x) != v.end())
-        return true;
-    else
-        return false;
+    if (std::binary_search(v.begin(), v.end(), x))
+		return true;
+	else
+		return false;
 }
 
 /** 
@@ -211,10 +212,14 @@ void move(int direction)
         newFruit();
     }
     // if next position has a pond
-    else if (std::find(indicesPond.begin(), indicesPond.end(), indexNext) != indicesPond.end())
+    else if (findIndex(indicesPond, indexNext))
     {
         // TO DO (For now, it just functions like normal)
-        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // control speed
+        #ifdef __APPLE__
+            std::this_thread::sleep_for(std::chrono::milliseconds(200)); // control speed
+        #else
+            Sleep(200);
+        #endif
         snake.insert(snake.begin(), indexNext);
         snake.pop_back();
     }
@@ -226,7 +231,11 @@ void move(int direction)
     // if next position is on grass
     else
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // control speed
+        #ifdef __APPLE__
+            std::this_thread::sleep_for(std::chrono::milliseconds(200)); // control speed
+        #else
+            Sleep(200);
+        #endif
         snake.insert(snake.begin(), indexNext);
         snake.pop_back();
     }
