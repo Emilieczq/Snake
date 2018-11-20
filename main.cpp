@@ -35,6 +35,12 @@ int currentDirection = 1; // 1: right; 2: down; 3: left; 4:up
 int currentLevel = 1;
 int moveDelayTime = 400;
 
+GLubyte* grass_tex;
+GLubyte* pond_tex;
+GLubyte* stone_tex;
+int width, height, max;
+GLuint textures[3];
+
 float camPos[] = {100, -100, 300}; // camera's position
 
 /**
@@ -132,7 +138,7 @@ void newFruit(void)
     indexFruit = r;
 }
 
-void resetAll(void)
+void newGame(void)
 {
     indicesPond.clear();
     indicesStone.clear();
@@ -148,30 +154,40 @@ void resetAll(void)
 
 void grass(int i)
 {
-    glColor3ub(0, 102, 0);
+    // glColor3ub(0, 102, 0);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBegin(GL_QUADS);
     int x = (i % SIZE_MAP) * SIZE_CELL;
     int y = (i / SIZE_MAP) * SIZE_CELL;
     int z = 0;
+    glTexCoord2f(0, 0);
     glVertex3i(x, y, z);
+    glTexCoord2f(0, 1);
     glVertex3i(x, y + SIZE_CELL, z);
+    glTexCoord2f(1, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, z);
+    glTexCoord2f(1, 0);
     glVertex3i(x + SIZE_CELL, y, z);
     glEnd();
 }
 
 void pond(int i)
 {
-    glColor3ub(0, 204, 255);
+    // glColor3ub(0, 204, 255);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBegin(GL_QUADS);
     int x = (i % SIZE_MAP) * SIZE_CELL;
     int y = (i / SIZE_MAP) * SIZE_CELL;
     int z = 0;
+    glTexCoord2f(0, 0);
     glVertex3i(x, y, z);
+    glTexCoord2f(0, 1);
     glVertex3i(x, y + SIZE_CELL, z);
+    glTexCoord2f(1, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, z);
+    glTexCoord2f(1, 0);
     glVertex3i(x + SIZE_CELL, y, z);
     glEnd();
 }
@@ -179,37 +195,58 @@ void pond(int i)
 // Now we use cube to represent a stone
 void stone(int i)
 {
-    glColor3ub(153, 153, 153);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    // glColor3ub(153, 153, 153);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBindTexture(GL_TEXTURE_2D, textures[2]);
     glBegin(GL_QUADS);
     int x = (i % SIZE_MAP) * SIZE_CELL;
     int y = (i / SIZE_MAP) * SIZE_CELL;
     // top
+    glTexCoord2f(0, 0);
     glVertex3i(x, y, SIZE_CELL);
+    glTexCoord2f(0, 1);
     glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
+    glTexCoord2f(1, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
+    glTexCoord2f(1, 0);
     glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
     // front
+    glTexCoord2f(0, 0);
     glVertex3i(x, y, 0);
+    glTexCoord2f(0, 1);
     glVertex3i(x, y, SIZE_CELL);
+    glTexCoord2f(1, 1);
     glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
+    glTexCoord2f(1, 0);
     glVertex3i(x + SIZE_CELL, y, 0);
     // left
+    glTexCoord2f(0, 0);
     glVertex3i(x, y, 0);
+    glTexCoord2f(0, 1);
     glVertex3i(x, y + SIZE_CELL, 0);
+    glTexCoord2f(1, 1);
     glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
+    glTexCoord2f(1, 0);
     glVertex3i(x, y, SIZE_CELL);
     // right
+    glTexCoord2f(0, 0);
     glVertex3i(x + SIZE_CELL, y, 0);
+    glTexCoord2f(0, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, 0);
+    glTexCoord2f(1, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
+    glTexCoord2f(1, 0);
     glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
     // back
+    glTexCoord2f(0, 0);
     glVertex3i(x, y + SIZE_CELL, 0);
+    glTexCoord2f(0, 1);
     glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
+    glTexCoord2f(1, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
+    glTexCoord2f(1, 0);
     glVertex3i(x + SIZE_CELL, y+ SIZE_CELL, 0);
-    // don't need to draw bottom
+    // don't need to draw bottom as it's hidden
     glEnd();
 }
 
@@ -293,7 +330,7 @@ void move(int direction)
     // if next position has a stone or its body, the snake dies and reset the map and the snake
     else if (findIndex(indicesStone, indexNext) || findIndex(snake, indexNext))
     {
-        resetAll();
+        newGame();
     }
     // if next position is on grass
     else
@@ -354,6 +391,7 @@ void display(void)
 
     // draw all features here
     drawMap();
+    glBindTexture(GL_TEXTURE_2D, 0); // disable texture binding for the following functions (no texture for fruit and snake now, can be added in the future)
     drawFruit();
     drawSnake();
 
@@ -393,7 +431,7 @@ void keyboard(unsigned char key, int x, int y)
 void processObstaclesMenu(int value)
 {
     currentLevel = value;
-    resetAll();
+    newGame();
 }
 
 void processSpeedMenu(int value)
@@ -417,7 +455,7 @@ void processMainMenu(int value)
     switch (value)
     {
     case 1:
-        resetAll();
+        newGame();
         break;
     case 2:
         isStop = !isStop;
@@ -432,23 +470,72 @@ void createMenu(void)
 {
     int numObstacles = glutCreateMenu(processObstaclesMenu);
     glutAddMenuEntry("X1", 1);
-	glutAddMenuEntry("X3", 2);
-	glutAddMenuEntry("X5", 3);
+    glutAddMenuEntry("X3", 2);
+    glutAddMenuEntry("X5", 3);
 
     int speed = glutCreateMenu(processSpeedMenu);
     glutAddMenuEntry("slow", 1);
     glutAddMenuEntry("medium", 2);
-	glutAddMenuEntry("fast", 3);
+    glutAddMenuEntry("fast", 3);
 
     int main_id = glutCreateMenu(processMainMenu);
     glutAddMenuEntry("New Game", 1);
-	glutAddSubMenu("Obstacles", numObstacles);
-	glutAddSubMenu("Speed", speed);
+    glutAddSubMenu("Obstacles", numObstacles);
+    glutAddSubMenu("Speed", speed);
     glutAddMenuEntry("Pause/Continue", 2);
     glutAddMenuEntry("Quit", 3);
 
     glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
 
+/* LoadPPM -- loads the specified ppm file, and returns the image data as a GLubyte 
+ *  (unsigned byte) array. Also returns the width and height of the image, and the
+ *  maximum colour value by way of arguments
+ */
+GLubyte *LoadPPM(char *file, int *width, int *height, int *max)
+{
+    GLubyte *img;
+    FILE *fd;
+    int n, m;
+    int k, nm;
+    char c;
+    int i;
+    char b[100];
+    float s;
+    int red, green, blue;
+
+    fd = fopen(file, "r");
+    fscanf(fd, "%[^\n] ", b);
+    if (b[0] != 'P' || b[1] != '3')
+    {
+        printf("%s is not a PPM file!\n", file);
+        exit(0);
+    }
+    printf("%s is a PPM file\n", file);
+    fscanf(fd, "%c", &c);
+    while (c == '#')
+    {
+        fscanf(fd, "%[^\n] ", b);
+        printf("%s\n", b);
+        fscanf(fd, "%c", &c);
+    }
+    ungetc(c, fd);
+    fscanf(fd, "%d %d %d", &n, &m, &k);
+    printf("%d rows  %d columns  max value= %d\n", n, m, k);
+    nm = n * m;
+    img = (GLubyte *)malloc(3 * sizeof(GLuint) * nm);
+    s = 255.0 / k;
+    for (i = 0; i < nm; i++)
+    {
+        fscanf(fd, "%d %d %d", &red, &green, &blue);
+        img[3 * nm - 3 * i - 3] = red * s;
+        img[3 * nm - 3 * i - 2] = green * s;
+        img[3 * nm - 3 * i - 1] = blue * s;
+    }
+    *width = n;
+    *height = m;
+    *max = k;
+    return img;
 }
 
 void init(void)
@@ -458,11 +545,38 @@ void init(void)
     glMatrixMode(GL_PROJECTION);
     gluPerspective(45, 1, 1, 1000);
 
-    newFruit();
-    createMap(currentLevel); // default level is easy(1)
+    /* Texture */
+    // enable texturing
+    glEnable(GL_TEXTURE_2D);
+    // generate 3 texture IDs, store them in array "textures"
+    glGenTextures(3, textures);
+    // load the texture (grass)
+    grass_tex = LoadPPM("grass.ppm", &width, &height, &max);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, grass_tex);
+    // load the texture (pond)
+    pond_tex = LoadPPM("pond.ppm", &width, &height, &max);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pond_tex);
+    // load the texture (stone)
+    stone_tex = LoadPPM("stone.ppm", &width, &height, &max);
+    glBindTexture(GL_TEXTURE_2D, textures[2]);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, stone_tex);
 
-    snake.push_back(1);
-    snake.push_back(0);
+    /* New game */
+    newGame();
 }
 
 void callbackInit()
