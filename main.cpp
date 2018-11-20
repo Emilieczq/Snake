@@ -19,8 +19,6 @@
 #include <chrono>
 #include <thread>
 
-using namespace std;
-
 const int SIZE_CELL = 10; // size of one cell of map is 10 * 10
 const int SIZE_MAP = 20;  // size of map is 20 cells * 20 cells
 
@@ -35,15 +33,22 @@ bool isStop = true; // at defaut, snake stops
 
 int currentDirection = 1; // 1: right; 2: down; 3: left; 4:up
 int currentLevel = 1;
+int moveDelayTime = 400;
 
 float camPos[] = {100, -100, 300}; // camera's position
 
+/**
+ * Check if an int x is in a vector v
+ * 
+ * must sort the vector at fisrt
+ */
 bool findIndex(std::vector<int> v, int x)
 {
+    std::sort (v.begin(), v.end());
     if (std::binary_search(v.begin(), v.end(), x))
 		return true;
-	else
-		return false;
+    else
+        return false;
 }
 
 /** 
@@ -61,13 +66,13 @@ void createMap(int level)
     }
     else if (level == 2) // medium
     {
-        numStones = 5;
-        numPonds = 5;
+        numStones = 3;
+        numPonds = 3;
     }
     else // hard
     {
-        numStones = 10;
-        numPonds = 10;
+        numStones = 5;
+        numPonds = 5;
     }
 
     for (int i = 0; i < SIZE_MAP * SIZE_MAP; i++)
@@ -81,9 +86,10 @@ void createMap(int level)
     {
         int r = rand() % (SIZE_MAP * SIZE_MAP);
         // do this loop to avoid the fruit is created in a pond or under snake
+        // or duplicate pond at the same place
         while (true)
         {
-            if (r == indexFruit || r == 0 || r == 1)
+            if (r == indexFruit || r == 0 || r == 1 || findIndex(indicesPond, r))
                 r = rand() % (SIZE_MAP * SIZE_MAP);
             else
                 break;
@@ -94,11 +100,12 @@ void createMap(int level)
     for (int i = 0; i < numStones; i++)
     {
         int r = rand() % (SIZE_MAP * SIZE_MAP);
-        // do this loop to avoid the fruit is created in a pond or under snake
+        // do this loop to avoid the fruit is created in a stone or under snake
+        // or duplicate stone at the same place
         // and make sure a stone is not created in a pond
         while (true)
         {
-            if (r == indexFruit || r == 0 || r == 1 || findIndex(indicesPond, r))
+            if (r == indexFruit || r == 0 || r == 1 || findIndex(indicesPond, r) || findIndex(indicesStone, r))
                 r = rand() % (SIZE_MAP * SIZE_MAP);
             else
                 break;
@@ -139,35 +146,95 @@ void resetAll(void)
     createMap(currentLevel);
 }
 
-void drawMap(void)
+void grass(int i)
 {
+    glColor3ub(0, 102, 0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBegin(GL_QUADS);
+    int x = (i % SIZE_MAP) * SIZE_CELL;
+    int y = (i / SIZE_MAP) * SIZE_CELL;
+    int z = 0;
+    glVertex3i(x, y, z);
+    glVertex3i(x, y + SIZE_CELL, z);
+    glVertex3i(x + SIZE_CELL, y + SIZE_CELL, z);
+    glVertex3i(x + SIZE_CELL, y, z);
+    glEnd();
+}
+
+void pond(int i)
+{
+    glColor3ub(0, 204, 255);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBegin(GL_QUADS);
+    int x = (i % SIZE_MAP) * SIZE_CELL;
+    int y = (i / SIZE_MAP) * SIZE_CELL;
+    int z = 0;
+    glVertex3i(x, y, z);
+    glVertex3i(x, y + SIZE_CELL, z);
+    glVertex3i(x + SIZE_CELL, y + SIZE_CELL, z);
+    glVertex3i(x + SIZE_CELL, y, z);
+    glEnd();
+}
+
+// Now we use cube to represent a stone
+void stone(int i)
+{
+    glColor3ub(153, 153, 153);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBegin(GL_QUADS);
+    int x = (i % SIZE_MAP) * SIZE_CELL;
+    int y = (i / SIZE_MAP) * SIZE_CELL;
+    // top
+    glVertex3i(x, y, SIZE_CELL);
+    glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
+    glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
+    glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
+    // front
+    glVertex3i(x, y, 0);
+    glVertex3i(x, y, SIZE_CELL);
+    glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
+    glVertex3i(x + SIZE_CELL, y, 0);
+    // left
+    glVertex3i(x, y, 0);
+    glVertex3i(x, y + SIZE_CELL, 0);
+    glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
+    glVertex3i(x, y, SIZE_CELL);
+    // right
+    glVertex3i(x + SIZE_CELL, y, 0);
+    glVertex3i(x + SIZE_CELL, y + SIZE_CELL, 0);
+    glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
+    glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
+    // back
+    glVertex3i(x, y + SIZE_CELL, 0);
+    glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
+    glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
+    glVertex3i(x + SIZE_CELL, y+ SIZE_CELL, 0);
+    // don't need to draw bottom
+    glEnd();
+}
+
+/**
+ * Draw the map
+ */
+void drawMap(void)
+{
     for (int i = 0; i < SIZE_MAP * SIZE_MAP; i++)
     {
         int type = map.at(i);
-        if (type == 1)
+        if (type == 1) // grass
         {
-            glColor3ub(0, 102, 0); // grass: green
+            grass(i);
         }
-        else if (type == 2)
+        else if (type == 2) // pond
         {
-            glColor3ub(0, 204, 255); // pond: blue
+            pond(i);
         }
-        else
+        else // stone
         {
-            glColor3ub(153, 153, 153); // stone: gray
+            stone(i);
         }
-        int x = (i % SIZE_MAP) * SIZE_CELL;
-        int y = (i / SIZE_MAP) * SIZE_CELL;
-        int z = 0;
-
-        glVertex3i(x, y, z);
-        glVertex3i(x, y + SIZE_CELL, z);
-        glVertex3i(x + SIZE_CELL, y + SIZE_CELL, z);
-        glVertex3i(x + SIZE_CELL, y, z);
     }
-    glEnd();
+    
 }
 
 /**
@@ -175,7 +242,7 @@ void drawMap(void)
  * then drop the last one
  * but if the next position has a fruit, don't drop the last block
  * 
- * check if the next postion has a stone or a pond
+ * check if the next postion has a stone or a pond or itself
  */
 void move(int direction)
 {
@@ -216,14 +283,14 @@ void move(int direction)
     {
         // TO DO (For now, it just functions like normal)
         #ifdef __APPLE__
-            std::this_thread::sleep_for(std::chrono::milliseconds(200)); // control speed
+            std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
         #else
-            Sleep(200);
+            Sleep(moveDelayTime);
         #endif
         snake.insert(snake.begin(), indexNext);
         snake.pop_back();
     }
-    // if next position has a stone or its body
+    // if next position has a stone or its body, the snake dies and reset the map and the snake
     else if (findIndex(indicesStone, indexNext) || findIndex(snake, indexNext))
     {
         resetAll();
@@ -232,9 +299,9 @@ void move(int direction)
     else
     {
         #ifdef __APPLE__
-            std::this_thread::sleep_for(std::chrono::milliseconds(200)); // control speed
+            std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
         #else
-            Sleep(200);
+            Sleep(moveDelayTime);
         #endif
         snake.insert(snake.begin(), indexNext);
         snake.pop_back();
@@ -285,7 +352,7 @@ void display(void)
     glLoadIdentity();
     gluLookAt(camPos[0], camPos[1], camPos[2], SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0, 0, 1, 0);
 
-    glColor3f(1.0, 1.0, 1.0);
+    // draw all features here
     drawMap();
     drawFruit();
     drawSnake();
@@ -323,6 +390,67 @@ void keyboard(unsigned char key, int x, int y)
     }
 }
 
+void processObstaclesMenu(int value)
+{
+    currentLevel = value;
+    resetAll();
+}
+
+void processSpeedMenu(int value)
+{
+    switch (value)
+    {
+    case 1:
+        moveDelayTime = 400;
+        break;
+    case 2:
+        moveDelayTime = 300;
+        break;
+    case 3:
+        moveDelayTime = 200;
+        break;
+    }
+}
+
+void processMainMenu(int value)
+{
+    switch (value)
+    {
+    case 1:
+        resetAll();
+        break;
+    case 2:
+        isStop = !isStop;
+        break;
+    case 3:
+        exit(0);
+        break;
+    }
+}
+
+void createMenu(void)
+{
+    int numObstacles = glutCreateMenu(processObstaclesMenu);
+    glutAddMenuEntry("X1", 1);
+	glutAddMenuEntry("X3", 2);
+	glutAddMenuEntry("X5", 3);
+
+    int speed = glutCreateMenu(processSpeedMenu);
+    glutAddMenuEntry("slow", 1);
+    glutAddMenuEntry("medium", 2);
+	glutAddMenuEntry("fast", 3);
+
+    int main_id = glutCreateMenu(processMainMenu);
+    glutAddMenuEntry("New Game", 1);
+	glutAddSubMenu("Obstacles", numObstacles);
+	glutAddSubMenu("Speed", speed);
+    glutAddMenuEntry("Pause/Continue", 2);
+    glutAddMenuEntry("Quit", 3);
+
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+}
+
 void init(void)
 {
     glClearColor(0, 0, 0, 0);
@@ -355,6 +483,8 @@ int main(int argc, char **argv)
 
     glEnable(GL_DEPTH_TEST);
     init();
+
+    createMenu();
     glutMainLoop();
     return (0);
 }
