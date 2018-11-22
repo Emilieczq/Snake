@@ -9,6 +9,7 @@
 #endif
 
 #include <math.h>
+#include <string>
 #include <time.h>
 #include <vector>
 #include <algorithm>
@@ -25,23 +26,34 @@ const int SIZE_MAP = 20;  // size of map is 20 cells * 20 cells
 std::vector<int> map; // index of vecter is index of a cell, int is type of this cell (1: grass; 2: pond; 3: stone)
 std::vector<int> indicesStone;
 std::vector<int> indicesPond;
-int indexFruit;
+int indexFruit = 0;
+int indexCoin = 0;
 
 std::vector<int> snake;
 
 bool isStop = true; // at defaut, snake stops
 
 int currentDirection = 1; // 1: right; 2: down; 3: left; 4:up
-int currentLevel = 1;
-int moveDelayTime = 400;
+int currentLevel = 3;
+int moveDelayTime = 200;
+int score = 0;
+int highscore = 0; // keep track of score
+int currency = 0;  // keep track of currency when coins are picked up
 
-GLubyte* grass_tex;
-GLubyte* pond_tex;
-GLubyte* stone_tex;
+// textures
+GLubyte *grass_tex;
+GLubyte *pond_tex;
+GLubyte *stone_tex;
+GLubyte *coin_tex;
+
 int width, height, max;
-GLuint textures[3];
+
+// change this number to add more textures
+GLuint textures[4];
 
 float camPos[] = {100, -100, 300}; // camera's position
+// float camPos[] = {100, -250, 100}; additional camera position (can be implemented as a key option)
+// extend these viewing options
 
 /**
  * Check if an int x is in a vector v
@@ -50,9 +62,9 @@ float camPos[] = {100, -100, 300}; // camera's position
  */
 bool findIndex(std::vector<int> v, int x)
 {
-    std::sort (v.begin(), v.end());
+    std::sort(v.begin(), v.end());
     if (std::binary_search(v.begin(), v.end(), x))
-		return true;
+        return true;
     else
         return false;
 }
@@ -67,18 +79,18 @@ void createMap(int level)
     int numStones, numPonds;
     if (level == 1) // easy
     {
-        numStones = 1;
-        numPonds = 1;
+        numStones = 5;
+        numPonds = 5;
     }
     else if (level == 2) // medium
     {
-        numStones = 3;
-        numPonds = 3;
+        numStones = 10;
+        numPonds = 10;
     }
     else // hard
     {
-        numStones = 5;
-        numPonds = 5;
+        numStones = 15;
+        numPonds = 15;
     }
 
     for (int i = 0; i < SIZE_MAP * SIZE_MAP; i++)
@@ -95,7 +107,7 @@ void createMap(int level)
         // or duplicate pond at the same place
         while (true)
         {
-            if (r == indexFruit || r == 0 || r == 1 || findIndex(indicesPond, r))
+            if (r == indexFruit || r == 0 || r == 1 || findIndex(indicesPond, r) || r == indexCoin)
                 r = rand() % (SIZE_MAP * SIZE_MAP);
             else
                 break;
@@ -127,15 +139,31 @@ void newFruit(void)
 {
     srand(time(NULL));
     int r = rand() % (SIZE_MAP * SIZE_MAP);
-    // make sure that the fruit is not in pond, in stone or in snake
+    // make sure that the fruit is not in pond, in stone or in snake, or in coin
     while (true)
     {
-        if (findIndex(indicesPond, r) || findIndex(indicesStone, r) || findIndex(snake, r))
+        if (findIndex(indicesPond, r) || findIndex(indicesStone, r) || findIndex(snake, r) || indexCoin == r)
             r = rand() % (SIZE_MAP * SIZE_MAP);
         else
             break;
     }
     indexFruit = r;
+}
+
+// set coin's index a random number
+void newCoin(void)
+{
+    srand(time(NULL));
+    int r = rand() % (SIZE_MAP * SIZE_MAP);
+    // make sure that the fruit is not in pond, in stone or in snake, or in fruit
+    while (true)
+    {
+        if (findIndex(indicesPond, r) || findIndex(indicesStone, r) || findIndex(snake, r) || indexFruit == r)
+            r = rand() % (SIZE_MAP * SIZE_MAP);
+        else
+            break;
+    }
+    indexCoin = r;
 }
 
 void newGame(void)
@@ -149,6 +177,8 @@ void newGame(void)
     isStop = true;
     currentDirection = 1;
     newFruit();
+    newCoin();
+
     createMap(currentLevel);
 }
 
@@ -245,7 +275,7 @@ void stone(int i)
     glTexCoord2f(1, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
     glTexCoord2f(1, 0);
-    glVertex3i(x + SIZE_CELL, y+ SIZE_CELL, 0);
+    glVertex3i(x + SIZE_CELL, y + SIZE_CELL, 0);
     // don't need to draw bottom as it's hidden
     glEnd();
 }
@@ -271,7 +301,6 @@ void drawMap(void)
             stone(i);
         }
     }
-    
 }
 
 /**
@@ -312,34 +341,55 @@ void move(int direction)
     // if next index equals to the index of fruit, don't drop the last block so snake becomes longer
     if (indexNext == indexFruit)
     {
+        score++;
+        printf("Score: %d\n", score);
         snake.insert(snake.begin(), indexNext);
         newFruit();
+    }
+
+    else if (indexNext == indexCoin)
+    {
+        currency++;
+        //printf("\nCoin picked up\n");
+        printf("    Wallet: $%d\n", currency);
+        newCoin();
     }
     // if next position has a pond
     else if (findIndex(indicesPond, indexNext))
     {
-        // TO DO (For now, it just functions like normal)
-        #ifdef __APPLE__
-            std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
-        #else
-            Sleep(moveDelayTime);
-        #endif
+// TO DO (For now, it just functions like normal)
+#ifdef __APPLE__
+        std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
+#else
+        Sleep(moveDelayTime);
+#endif
         snake.insert(snake.begin(), indexNext);
         snake.pop_back();
     }
     // if next position has a stone or its body, the snake dies and reset the map and the snake
     else if (findIndex(indicesStone, indexNext) || findIndex(snake, indexNext))
     {
+        // write this from terminal to window possibly
+        printf("~~~~~~~~~~~~~~~~~~~~~\n");
+        printf("~~~~~~~~~~~~~~~~~~~~~\n");
+        printf("You lost!\nYour Score: %d\n", score);
+        printf("~~~~~~~~~~~~~~~~~~~~~\n");
+        printf("~~~~~~~~~~~~~~~~~~~~~\n");
+        score = 0;
+
+        // keep wallet at the same amount? that way the user can continue to collect coins
+        // and spend them in future games.
+        //currency = 0;
         newGame();
     }
     // if next position is on grass
     else
     {
-        #ifdef __APPLE__
-            std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
-        #else
-            Sleep(moveDelayTime);
-        #endif
+#ifdef __APPLE__
+        std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
+#else
+        Sleep(moveDelayTime);
+#endif
         snake.insert(snake.begin(), indexNext);
         snake.pop_back();
     }
@@ -371,7 +421,8 @@ void drawFruit(void)
 {
     glMatrixMode(GL_MODELVIEW);
 
-    glColor3f(1, 1, 0);
+    // made fruit red
+    glColor3f(1, 0, 0);
     int x = SIZE_CELL / 2 + indexFruit % SIZE_MAP * SIZE_CELL;
     int y = SIZE_CELL / 2 + indexFruit / SIZE_MAP * SIZE_CELL;
     glPushMatrix();
@@ -382,18 +433,107 @@ void drawFruit(void)
     glutPostRedisplay();
 }
 
+float angle = 0;
+void drawCoin(void)
+{
+    glEnable(GL_TEXTURE_2D);
+
+    glBindTexture(GL_TEXTURE_2D, textures[3]);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, coin_tex);
+
+    int x = SIZE_CELL / 2 + indexCoin % SIZE_MAP * SIZE_CELL;
+    int y = SIZE_CELL / 2 + indexCoin / SIZE_MAP * SIZE_CELL;
+
+    glPushMatrix();
+        glTranslatef(x, y, SIZE_CELL / 2);
+        glRotatef(angle, 0, 1, 1);
+
+        // the rotation is affected when the game is paused or not.
+        // thus, changed the speeds of the game to ensure smoother rotation of the objects.
+        if (isStop)
+        {
+            angle += 0.1;
+        }
+        else
+        {
+            angle += 40;
+        }
+        GLUquadricObj *sphere = NULL;
+        sphere = gluNewQuadric();
+        gluQuadricDrawStyle(sphere, GLU_FILL);
+        gluQuadricTexture(sphere, true);
+        gluQuadricNormals(sphere, GLU_SMOOTH);
+        //glBindTexture(GL_TEXTURE_2D, textures[3]);
+        gluSphere(sphere, SIZE_CELL / 2, 50, 50);
+    glPopMatrix();
+
+    glutPostRedisplay();
+}
+
 void display(void)
 {
+    // title
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     gluLookAt(camPos[0], camPos[1], camPos[2], SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0, 0, 1, 0);
 
+    glRasterPos2i(60, 250);
+    std::string title = "3D SNAKE GAME";
+    for (std::string::iterator i = title.begin(); i != title.end(); ++i)
+    {
+        char c = *i;
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+
+    // score
+    std::string scoreString = std::to_string(score);
+    glRasterPos2i(45, -13);
+    std::string scoreDescription = "SCORE: " + scoreString;
+    for (std::string::iterator i = scoreDescription.begin(); i != scoreDescription.end(); ++i)
+    {
+        char c = *i;
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+
+    // MAX score
+    if (highscore < score)
+    {
+        highscore = score;
+    }
+    std::string hiscoreString = std::to_string(highscore);
+    glRasterPos2i(45, -23);
+    std::string hiscoreDescription = "HIGH SCORE: " + hiscoreString;
+    for (std::string::iterator i = hiscoreDescription.begin(); i != hiscoreDescription.end(); ++i)
+    {
+        char c = *i;
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+
+    // wallet
+    std::string currencyString = std::to_string(currency);
+    glRasterPos2i(115, -13);
+    std::string currencyDescription = "WALLET: $" + currencyString;
+    for (std::string::iterator i = currencyDescription.begin(); i != currencyDescription.end(); ++i)
+    {
+        char c = *i;
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+
     // draw all features here
     drawMap();
+    drawCoin();
+
     glBindTexture(GL_TEXTURE_2D, 0); // disable texture binding for the following functions (no texture for fruit and snake now, can be added in the future)
     drawFruit();
     drawSnake();
+
+    // reshape window (TODO)
+    // glTranslatef(-1 * (SIZE_MAP / 2), 0, -1 * (SIZE_MAP / 2));
 
     glutSwapBuffers();
 }
@@ -439,13 +579,13 @@ void processSpeedMenu(int value)
     switch (value)
     {
     case 1:
-        moveDelayTime = 400;
+        moveDelayTime = 200;
         break;
     case 2:
-        moveDelayTime = 300;
+        moveDelayTime = 100;
         break;
     case 3:
-        moveDelayTime = 200;
+        moveDelayTime = 75;
         break;
     }
 }
@@ -469,9 +609,9 @@ void processMainMenu(int value)
 void createMenu(void)
 {
     int numObstacles = glutCreateMenu(processObstaclesMenu);
-    glutAddMenuEntry("X1", 1);
-    glutAddMenuEntry("X3", 2);
-    glutAddMenuEntry("X5", 3);
+    glutAddMenuEntry("X5", 1);
+    glutAddMenuEntry("X10", 2);
+    glutAddMenuEntry("X15", 3);
 
     int speed = glutCreateMenu(processSpeedMenu);
     glutAddMenuEntry("slow", 1);
@@ -548,8 +688,8 @@ void init(void)
     /* Texture */
     // enable texturing
     glEnable(GL_TEXTURE_2D);
-    // generate 3 texture IDs, store them in array "textures"
-    glGenTextures(3, textures);
+    // generate 4 texture IDs, store them in array "textures"
+    glGenTextures(4, textures);
     // load the texture (grass)
     grass_tex = LoadPPM("grass.ppm", &width, &height, &max);
     glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -575,6 +715,8 @@ void init(void)
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, stone_tex);
 
+    // load coin texture
+    coin_tex = LoadPPM("coin.ppm", &width, &height, &max);
     /* New game */
     newGame();
 }
