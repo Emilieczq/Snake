@@ -436,15 +436,6 @@ void drawFruit(void)
 float angle = 0;
 void drawCoin(void)
 {
-    glEnable(GL_TEXTURE_2D);
-
-    glBindTexture(GL_TEXTURE_2D, textures[3]);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, coin_tex);
-
     int x = SIZE_CELL / 2 + indexCoin % SIZE_MAP * SIZE_CELL;
     int y = SIZE_CELL / 2 + indexCoin / SIZE_MAP * SIZE_CELL;
 
@@ -462,6 +453,7 @@ void drawCoin(void)
         {
             angle += 40;
         }
+        glBindTexture(GL_TEXTURE_2D, textures[3]);
         GLUquadricObj *sphere = NULL;
         sphere = gluNewQuadric();
         gluQuadricDrawStyle(sphere, GLU_FILL);
@@ -717,6 +709,13 @@ void init(void)
 
     // load coin texture
     coin_tex = LoadPPM("coin.ppm", &width, &height, &max);
+    glBindTexture(GL_TEXTURE_2D, textures[3]);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, coin_tex);
+
     /* New game */
     newGame();
 }
