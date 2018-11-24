@@ -54,9 +54,16 @@ int width, height, max;
 // change this number to add more textures
 GLuint textures[4];
 
+const int light_off = 0;
+const int light_on = 1;
+//default light is on
+int setlight = light_on;
+//light position
+float light_pos[] = {150, -1000, 150, 1}; //light's position
+float lightSpeed = 20.0f;
+
 float camPos[] = {100, -100, 300}; // camera's position
-// float camPos[] = {100, -250, 100}; additional camera position (can be implemented as a key option)
-// extend these viewing options
+float camSpeed = 2.0f;
 
 /**
  * Check if an int x is in a vector v
@@ -361,6 +368,9 @@ void move(int direction)
     // if next position has a pond
     else if (findIndex(indicesPond, indexNext))
     {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(1, 1, 1, 0.3);
 // TO DO (For now, it just functions like normal)
 #ifdef __APPLE__
         std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
@@ -374,13 +384,6 @@ void move(int direction)
     else if (findIndex(indicesStone, indexNext) || findIndex(snake, indexNext))
     {
         lose = true;
-        // write this from terminal to window possibly
-        printf("~~~~~~~~~~~~~~~~~~~~~\n");
-        printf("~~~~~~~~~~~~~~~~~~~~~\n");
-        printf("You lost!\nYour Score: %d\n", score);
-        printf("~~~~~~~~~~~~~~~~~~~~~\n");
-        printf("~~~~~~~~~~~~~~~~~~~~~\n");
-        
         // keep wallet at the same amount? that way the user can continue to collect coins
         // and spend them in future games.
         //currency = 0;
@@ -403,7 +406,7 @@ void drawSnake(void)
 {
     glMatrixMode(GL_MODELVIEW);
 
-    glColor3f(1, 1, 1);
+    glColor4f(1, 1, 1, 1);
 
     if (!isStop)
         move(currentDirection);
@@ -418,6 +421,7 @@ void drawSnake(void)
         glutSolidSphere(SIZE_CELL / 2, 50, 50);
         glPopMatrix();
     }
+    glDisable(GL_BLEND);
     glutPostRedisplay();
 }
 
@@ -472,6 +476,19 @@ void drawCoin(void)
 
 void display(void)
 {
+    //set material
+    float amb[] = {1.0, 0.5, 0.3, 0.3};
+    float dif[] = {1.0, 0.5, 0.3, 1.0};
+    float spec[] = {0.5, 0.5, 0.5, 1.0};
+    float shiny = 50;
+
+    //enable material
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, amb);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, dif);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shiny);
+    glColorMaterial(GL_DIFFUSE, GL_AMBIENT);
+
     // title
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
@@ -572,22 +589,27 @@ void keyboard(unsigned char key, int x, int y)
     switch (key)
     {
     case 'q':
+    case 'Q':
     case 27:
         exit(0);
         break;
     case 'd':
+    case 'D':
         if ((currentDirection == 2 || currentDirection == 4) && !isStop)
             currentDirection = 1;
         break;
     case 's':
+    case 'S':
         if ((currentDirection == 1 || currentDirection == 3) && !isStop)
             currentDirection = 2;
         break;
     case 'a':
+    case 'A':
         if ((currentDirection == 2 || currentDirection == 4) && !isStop)
             currentDirection = 3;
         break;
     case 'w':
+    case 'W':
         if ((currentDirection == 1 || currentDirection == 3) && !isStop)
             currentDirection = 4;
         break;
@@ -604,7 +626,69 @@ void keyboard(unsigned char key, int x, int y)
             isStop = !isStop;
         }
         break;
+    case 'l':
+    case 'L':
+        if (setlight == light_on)
+        {
+            setlight = light_off;
+            glDisable(GL_LIGHT0);
+            glDisable(GL_LIGHTING);
+        }
+        else
+        {
+            setlight = light_on;
+            glEnable(GL_LIGHT0);
+            glEnable(GL_LIGHTING);
+        }
+        break;
+    case 'j':
+    case 'J':
+        light_pos[1] -= lightSpeed;
+        break;
+    case 'u':
+    case 'U':
+        light_pos[1] += lightSpeed;
+        break;
+    case 'h':
+    case 'H':
+        light_pos[2] -= lightSpeed;
+        break;
+    case 'k':
+    case 'K':
+        light_pos[2] += lightSpeed;
+        break;
     }
+    //make sure only light is changed
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+    glPopMatrix();
+    glutPostRedisplay();
+}
+
+void special(int key, int x, int y)
+{
+    // arrow key presses control campera
+    switch (key)
+    {
+    case GLUT_KEY_UP:
+        camPos[1] += camSpeed;
+        break;
+
+    case GLUT_KEY_DOWN:
+        camPos[1] -= camSpeed;
+        break;
+    
+    case GLUT_KEY_LEFT:
+        camPos[2] += camSpeed;
+        break;
+
+    case GLUT_KEY_RIGHT:
+        camPos[2] -= camSpeed;
+        break;
+    }
+    glutPostRedisplay();
 }
 
 void processObstaclesMenu(int value)
@@ -721,6 +805,13 @@ void init(void)
 {
     glClearColor(0, 0, 0, 0);
     glColor3f(1, 1, 1);
+
+    glEnable(GL_COLOR_MATERIAL);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
+    glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+
     glMatrixMode(GL_PROJECTION);
     gluPerspective(45, 1, 1, 1000);
 
@@ -771,6 +862,24 @@ void callbackInit()
 {
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
+    glutSpecialFunc(special);
+}
+
+void instructions(void){
+    printf("      GAME    CONTROLS    \n");
+    printf("======================================\n");
+    printf("w, a, s, d  : Snake Direction Control \n");
+    printf("======================================\n");
+    printf("u, h, j, k: Light Control     \n");
+    printf("======================================\n");
+    printf("  l  : Turn On/Off Light \n");
+    printf("======================================\n");
+    printf("arrow keys  : Campera Control \n");
+    printf("======================================\n");
+    printf("  q  : Quit Program         \n");
+    printf("==============================\n");
+    printf("\n");
+    
 }
 
 int main(int argc, char **argv)
@@ -782,6 +891,7 @@ int main(int argc, char **argv)
     glutCreateWindow("Snake");
 
     callbackInit();
+    instructions();
 
     glEnable(GL_DEPTH_TEST);
     init();
