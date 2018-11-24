@@ -8,6 +8,9 @@
 #include <GL/freeglut.h>
 #endif
 
+#include <cstdlib>
+#include <unistd.h>
+
 #include <math.h>
 #include <string>
 #include <time.h>
@@ -32,7 +35,7 @@ int indexCoin = 0;
 std::vector<int> snake;
 
 bool isStop = true; // at defaut, snake stops
-
+bool lose = false;
 int currentDirection = 1; // 1: right; 2: down; 3: left; 4:up
 int currentLevel = 3;
 int moveDelayTime = 200;
@@ -168,6 +171,7 @@ void newCoin(void)
 
 void newGame(void)
 {
+    score = 0;
     indicesPond.clear();
     indicesStone.clear();
     snake.clear();
@@ -369,18 +373,18 @@ void move(int direction)
     // if next position has a stone or its body, the snake dies and reset the map and the snake
     else if (findIndex(indicesStone, indexNext) || findIndex(snake, indexNext))
     {
+        lose = true;
         // write this from terminal to window possibly
         printf("~~~~~~~~~~~~~~~~~~~~~\n");
         printf("~~~~~~~~~~~~~~~~~~~~~\n");
         printf("You lost!\nYour Score: %d\n", score);
         printf("~~~~~~~~~~~~~~~~~~~~~\n");
         printf("~~~~~~~~~~~~~~~~~~~~~\n");
-        score = 0;
-
+        
         // keep wallet at the same amount? that way the user can continue to collect coins
         // and spend them in future games.
         //currency = 0;
-        newGame();
+        //newGame();
     }
     // if next position is on grass
     else
@@ -440,27 +444,27 @@ void drawCoin(void)
     int y = SIZE_CELL / 2 + indexCoin / SIZE_MAP * SIZE_CELL;
 
     glPushMatrix();
-        glTranslatef(x, y, SIZE_CELL / 2);
-        glRotatef(angle, 0, 1, 1);
+    glTranslatef(x, y, SIZE_CELL / 2);
+    glRotatef(angle, 0, 1, 1);
 
-        // the rotation is affected when the game is paused or not.
-        // thus, changed the speeds of the game to ensure smoother rotation of the objects.
-        if (isStop)
-        {
-            angle += 0.1;
-        }
-        else
-        {
-            angle += 40;
-        }
-        glBindTexture(GL_TEXTURE_2D, textures[3]);
-        GLUquadricObj *sphere = NULL;
-        sphere = gluNewQuadric();
-        gluQuadricDrawStyle(sphere, GLU_FILL);
-        gluQuadricTexture(sphere, true);
-        gluQuadricNormals(sphere, GLU_SMOOTH);
-        //glBindTexture(GL_TEXTURE_2D, textures[3]);
-        gluSphere(sphere, SIZE_CELL / 2, 50, 50);
+    // the rotation is affected when the game is paused or not.
+    // thus, changed the speeds of the game to ensure smoother rotation of the objects.
+    if (isStop)
+    {
+        angle += 0.1;
+    }
+    else
+    {
+        angle += 40;
+    }
+    glBindTexture(GL_TEXTURE_2D, textures[3]);
+    GLUquadricObj *sphere = NULL;
+    sphere = gluNewQuadric();
+    gluQuadricDrawStyle(sphere, GLU_FILL);
+    gluQuadricTexture(sphere, true);
+    gluQuadricNormals(sphere, GLU_SMOOTH);
+    //glBindTexture(GL_TEXTURE_2D, textures[3]);
+    gluSphere(sphere, SIZE_CELL / 2, 50, 50);
     glPopMatrix();
 
     glutPostRedisplay();
@@ -475,55 +479,87 @@ void display(void)
     gluLookAt(camPos[0], camPos[1], camPos[2], SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0, 0, 1, 0);
 
     glRasterPos2i(60, 250);
-    std::string title = "3D SNAKE GAME";
-    for (std::string::iterator i = title.begin(); i != title.end(); ++i)
+    if (!lose)
     {
-        char c = *i;
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        std::string title = "3D SNAKE GAME";
+        for (std::string::iterator i = title.begin(); i != title.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+
+        // score
+        std::string scoreString = std::to_string(score);
+        glRasterPos2i(45, -13);
+        std::string scoreDescription = "SCORE: " + scoreString;
+        for (std::string::iterator i = scoreDescription.begin(); i != scoreDescription.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+
+        // MAX score
+        if (highscore < score)
+        {
+            highscore = score;
+        }
+        std::string hiscoreString = std::to_string(highscore);
+        glRasterPos2i(45, -23);
+        std::string hiscoreDescription = "HIGH SCORE: " + hiscoreString;
+        for (std::string::iterator i = hiscoreDescription.begin(); i != hiscoreDescription.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+
+        // wallet
+        std::string currencyString = std::to_string(currency);
+        glRasterPos2i(115, -13);
+        std::string currencyDescription = "WALLET: $" + currencyString;
+        for (std::string::iterator i = currencyDescription.begin(); i != currencyDescription.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+
+        // draw all features here
+        drawMap();
+        drawCoin();
+
+        glBindTexture(GL_TEXTURE_2D, 0); // disable texture binding for the following functions (no texture for fruit and snake now, can be added in the future)
+        drawFruit();
+        drawSnake();
     }
+    else
+    {   
+        glPushMatrix();
+        glTranslatef(10, 80,1);
+        glScalef(0.08, 0.2, 1);
+        std::string titleL = "You lost! \n  Press SPACE to restart ";
+        for (std::string::iterator i = titleL.begin(); i != titleL.end(); ++i)
+        {
+            char c = *i;
+            glutStrokeCharacter(GLUT_STROKE_ROMAN, c);
+        }
+        glPopMatrix();
 
-    // score
-    std::string scoreString = std::to_string(score);
-    glRasterPos2i(45, -13);
-    std::string scoreDescription = "SCORE: " + scoreString;
-    for (std::string::iterator i = scoreDescription.begin(); i != scoreDescription.end(); ++i)
-    {
-        char c = *i;
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+       /* glRasterPos2i(25, 50);
+        std::string titleR = "Press SPACE to restart the game. ";
+        for (std::string::iterator i = titleR.begin(); i != titleR.end(); ++i)
+        {
+            char c = *i;
+            glutStrokeCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }*/
+
+        std::string scoreString = std::to_string(score);
+        glRasterPos2i(45, 60);
+        std::string scoreDescription = "SCORE: " + scoreString;
+        for (std::string::iterator i = scoreDescription.begin(); i != scoreDescription.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        }
     }
-
-    // MAX score
-    if (highscore < score)
-    {
-        highscore = score;
-    }
-    std::string hiscoreString = std::to_string(highscore);
-    glRasterPos2i(45, -23);
-    std::string hiscoreDescription = "HIGH SCORE: " + hiscoreString;
-    for (std::string::iterator i = hiscoreDescription.begin(); i != hiscoreDescription.end(); ++i)
-    {
-        char c = *i;
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-    }
-
-    // wallet
-    std::string currencyString = std::to_string(currency);
-    glRasterPos2i(115, -13);
-    std::string currencyDescription = "WALLET: $" + currencyString;
-    for (std::string::iterator i = currencyDescription.begin(); i != currencyDescription.end(); ++i)
-    {
-        char c = *i;
-        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-    }
-
-    // draw all features here
-    drawMap();
-    drawCoin();
-
-    glBindTexture(GL_TEXTURE_2D, 0); // disable texture binding for the following functions (no texture for fruit and snake now, can be added in the future)
-    drawFruit();
-    drawSnake();
-
     // reshape window (TODO)
     // glTranslatef(-1 * (SIZE_MAP / 2), 0, -1 * (SIZE_MAP / 2));
 
@@ -532,6 +568,7 @@ void display(void)
 
 void keyboard(unsigned char key, int x, int y)
 {
+
     switch (key)
     {
     case 'q':
@@ -555,7 +592,17 @@ void keyboard(unsigned char key, int x, int y)
             currentDirection = 4;
         break;
     case ' ':
-        isStop = !isStop;
+        if (lose)
+        {
+            lose = false;
+            
+            glutPostRedisplay();
+            newGame();
+        }
+        else
+        {
+            isStop = !isStop;
+        }
         break;
     }
 }
@@ -740,6 +787,7 @@ int main(int argc, char **argv)
     init();
 
     createMenu();
+
     glutMainLoop();
     return (0);
 }
