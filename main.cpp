@@ -505,6 +505,23 @@ void display(void)
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
 
+        //instruction
+        glRasterPos2i(-20, 310);
+        std::string instrucString = "w, a, s, d  : Snake Direction Control  u, j, h, k : Light Control";
+        for (std::string::iterator i = instrucString.begin(); i != instrucString.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        }
+
+        glRasterPos2i(-20, 290);
+        std::string instrucString2 = " arrow key : Campera Control   l : Turn on/off Light  q : Quit";
+        for (std::string::iterator i = instrucString2.begin(); i != instrucString2.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+        }
+
         // score
         std::string scoreString = std::to_string(score);
         glRasterPos2i(45, -13);
@@ -548,9 +565,9 @@ void display(void)
         drawSnake();
     }
     else
-    {   
+    {
         glPushMatrix();
-        glTranslatef(10, 80,1);
+        glTranslatef(10, 80, 1);
         glScalef(0.08, 0.2, 1);
         std::string titleL = "You lost! \n  Press SPACE to restart ";
         for (std::string::iterator i = titleL.begin(); i != titleL.end(); ++i)
@@ -560,7 +577,7 @@ void display(void)
         }
         glPopMatrix();
 
-       /* glRasterPos2i(25, 50);
+        /* glRasterPos2i(25, 50);
         std::string titleR = "Press SPACE to restart the game. ";
         for (std::string::iterator i = titleR.begin(); i != titleR.end(); ++i)
         {
@@ -617,7 +634,7 @@ void keyboard(unsigned char key, int x, int y)
         if (lose)
         {
             lose = false;
-            
+
             glutPostRedisplay();
             newGame();
         }
@@ -679,7 +696,7 @@ void special(int key, int x, int y)
     case GLUT_KEY_DOWN:
         camPos[1] -= camSpeed;
         break;
-    
+
     case GLUT_KEY_LEFT:
         camPos[2] += camSpeed;
         break;
@@ -865,23 +882,6 @@ void callbackInit()
     glutSpecialFunc(special);
 }
 
-void instructions(void){
-    printf("      GAME    CONTROLS    \n");
-    printf("======================================\n");
-    printf("w, a, s, d  : Snake Direction Control \n");
-    printf("======================================\n");
-    printf("u, h, j, k: Light Control     \n");
-    printf("======================================\n");
-    printf("  l  : Turn On/Off Light \n");
-    printf("======================================\n");
-    printf("arrow keys  : Campera Control \n");
-    printf("======================================\n");
-    printf("  q  : Quit Program         \n");
-    printf("==============================\n");
-    printf("\n");
-    
-}
-
 int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
@@ -891,7 +891,6 @@ int main(int argc, char **argv)
     glutCreateWindow("Snake");
 
     callbackInit();
-    instructions();
 
     glEnable(GL_DEPTH_TEST);
     init();
