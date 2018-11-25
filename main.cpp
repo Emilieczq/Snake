@@ -37,38 +37,30 @@ std::vector<int> snake;
 bool isStop = true; // at defaut, snake stops
 bool lose = false;
 int currentDirection = 1; // 1: right; 2: down; 3: left; 4:up
-int currentLevel = 3;
+int currentLevel = 1;     // obstacles 1: X5; 2: X10; 3: X15
 int moveDelayTime = 200;
 int score = 0;
 int highscore = 0; // keep track of score
 int currency = 0;  // keep track of currency when coins are picked up
 
-// textures
-GLubyte *grass_tex;
-GLubyte *pond_tex;
-GLubyte *stone_tex;
-GLubyte *coin_tex;
-
+/* Textures */
+GLubyte *grass_tex, *pond_tex, *stone_tex, *coin_tex;
 int width, height, max;
+GLuint textures[4]; // change this number to add more textures
 
-// change this number to add more textures
-GLuint textures[4];
+/* Lighting */
+bool lightOn = true;                      // default light is on
+float light_pos[] = {150, -500, 150, 1}; //light's position
+float lightSpeed = 100.0f;
 
-const int light_off = 0;
-const int light_on = 1;
-//default light is on
-int setlight = light_on;
-//light position
-float light_pos[] = {150, -1000, 150, 1}; //light's position
-float lightSpeed = 20.0f;
-
+/* Camera */
 float camPos[] = {100, -100, 300}; // camera's position
 float camSpeed = 2.0f;
 
 /**
  * Check if an int x is in a vector v
  * 
- * must sort the vector at fisrt
+ * must sort the vector at first
  */
 bool findIndex(std::vector<int> v, int x)
 {
@@ -103,6 +95,7 @@ void createMap(int level)
         numPonds = 15;
     }
 
+    /* Initial all cases of the map to grass */
     for (int i = 0; i < SIZE_MAP * SIZE_MAP; i++)
     {
         map.push_back(1);
@@ -142,9 +135,8 @@ void createMap(int level)
         indicesStone.push_back(r);
     }
 }
-/**
- * Set the fruit's index a random number
- */
+
+// Set the fruit's index a random number
 void newFruit(void)
 {
     srand(time(NULL));
@@ -203,12 +195,16 @@ void grass(int i)
     int y = (i / SIZE_MAP) * SIZE_CELL;
     int z = 0;
     glTexCoord2f(0, 0);
+    glNormal3f(0, 0, 1);
     glVertex3i(x, y, z);
     glTexCoord2f(0, 1);
+    glNormal3f(0, 0, 1);
     glVertex3i(x, y + SIZE_CELL, z);
     glTexCoord2f(1, 1);
+    glNormal3f(0, 0, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, z);
     glTexCoord2f(1, 0);
+    glNormal3f(0, 0, 1);
     glVertex3i(x + SIZE_CELL, y, z);
     glEnd();
 }
@@ -223,12 +219,16 @@ void pond(int i)
     int y = (i / SIZE_MAP) * SIZE_CELL;
     int z = 0;
     glTexCoord2f(0, 0);
+    glNormal3f(0, 0, 1);
     glVertex3i(x, y, z);
     glTexCoord2f(0, 1);
+    glNormal3f(0, 0, 1);
     glVertex3i(x, y + SIZE_CELL, z);
     glTexCoord2f(1, 1);
+    glNormal3f(0, 0, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, z);
     glTexCoord2f(1, 0);
+    glNormal3f(0, 0, 1);
     glVertex3i(x + SIZE_CELL, y, z);
     glEnd();
 }
@@ -244,48 +244,68 @@ void stone(int i)
     int y = (i / SIZE_MAP) * SIZE_CELL;
     // top
     glTexCoord2f(0, 0);
+    glNormal3f(0, 0, 1);
     glVertex3i(x, y, SIZE_CELL);
     glTexCoord2f(0, 1);
+    glNormal3f(0, 0, 1);
     glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
     glTexCoord2f(1, 1);
+    glNormal3f(0, 0, 1);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
     glTexCoord2f(1, 0);
+    glNormal3f(0, 0, 1);
     glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
     // front
     glTexCoord2f(0, 0);
+    glNormal3f(0, -1, 0);
     glVertex3i(x, y, 0);
     glTexCoord2f(0, 1);
+    glNormal3f(0, -1, 0);
     glVertex3i(x, y, SIZE_CELL);
     glTexCoord2f(1, 1);
+    glNormal3f(0, -1, 0);
     glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
     glTexCoord2f(1, 0);
+    glNormal3f(0, -1, 0);
     glVertex3i(x + SIZE_CELL, y, 0);
     // left
     glTexCoord2f(0, 0);
+    glNormal3f(-1, 0, 0);
     glVertex3i(x, y, 0);
     glTexCoord2f(0, 1);
+    glNormal3f(-1, 0, 0);
     glVertex3i(x, y + SIZE_CELL, 0);
     glTexCoord2f(1, 1);
+    glNormal3f(-1, 0, 0);
     glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
     glTexCoord2f(1, 0);
+    glNormal3f(-1, 0, 0);
     glVertex3i(x, y, SIZE_CELL);
     // right
     glTexCoord2f(0, 0);
+    glNormal3f(1, 0, 0);
     glVertex3i(x + SIZE_CELL, y, 0);
     glTexCoord2f(0, 1);
+    glNormal3f(1, 0, 0);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, 0);
     glTexCoord2f(1, 1);
+    glNormal3f(1, 0, 0);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
     glTexCoord2f(1, 0);
+    glNormal3f(1, 0, 0);
     glVertex3i(x + SIZE_CELL, y, SIZE_CELL);
     // back
     glTexCoord2f(0, 0);
+    glNormal3f(0, 1, 0);
     glVertex3i(x, y + SIZE_CELL, 0);
     glTexCoord2f(0, 1);
+    glNormal3f(0, 1, 0);
     glVertex3i(x, y + SIZE_CELL, SIZE_CELL);
     glTexCoord2f(1, 1);
+    glNormal3f(0, 1, 0);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, SIZE_CELL);
     glTexCoord2f(1, 0);
+    glNormal3f(0, 1, 0);
     glVertex3i(x + SIZE_CELL, y + SIZE_CELL, 0);
     // don't need to draw bottom as it's hidden
     glEnd();
@@ -495,17 +515,25 @@ void display(void)
     glLoadIdentity();
     gluLookAt(camPos[0], camPos[1], camPos[2], SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0, 0, 1, 0);
 
-    glRasterPos2i(60, 250);
     if (!lose)
     {
-        std::string title = "3D SNAKE GAME";
-        for (std::string::iterator i = title.begin(); i != title.end(); ++i)
-        {
-            char c = *i;
-            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-        }
+        // Enable lighting if light's on, light0 is enabled in init so no need to enable again
+        if (lightOn)
+            glEnable(GL_LIGHTING);
+        else
+            glDisable(GL_LIGHTING);
 
-        //instruction
+        /* display all models here */
+        drawMap();
+        drawCoin();
+
+        glBindTexture(GL_TEXTURE_2D, 0); // disable texture binding for the following functions (no texture for fruit and snake now, can be added in the future)
+        drawFruit();
+        drawSnake();
+
+        /* display all words here */
+        glDisable(GL_LIGHTING); // disable lighting on words
+        // instruction
         glRasterPos2i(-20, 310);
         std::string instrucString = "w, a, s, d  : Snake Direction Control  u, j, h, k : Light Control";
         for (std::string::iterator i = instrucString.begin(); i != instrucString.end(); ++i)
@@ -513,7 +541,6 @@ void display(void)
             char c = *i;
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
         }
-
         glRasterPos2i(-20, 290);
         std::string instrucString2 = " arrow key : Campera Control   l : Turn on/off Light  q : Quit";
         for (std::string::iterator i = instrucString2.begin(); i != instrucString2.end(); ++i)
@@ -521,7 +548,14 @@ void display(void)
             char c = *i;
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
         }
-
+        // title
+        glRasterPos2i(60, 250);
+        std::string title = "3D SNAKE GAME";
+        for (std::string::iterator i = title.begin(); i != title.end(); ++i)
+        {
+            char c = *i;
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
         // score
         std::string scoreString = std::to_string(score);
         glRasterPos2i(45, -13);
@@ -531,7 +565,6 @@ void display(void)
             char c = *i;
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
-
         // MAX score
         if (highscore < score)
         {
@@ -545,7 +578,6 @@ void display(void)
             char c = *i;
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
-
         // wallet
         std::string currencyString = std::to_string(currency);
         glRasterPos2i(115, -13);
@@ -555,14 +587,6 @@ void display(void)
             char c = *i;
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
-
-        // draw all features here
-        drawMap();
-        drawCoin();
-
-        glBindTexture(GL_TEXTURE_2D, 0); // disable texture binding for the following functions (no texture for fruit and snake now, can be added in the future)
-        drawFruit();
-        drawSnake();
     }
     else
     {
@@ -634,7 +658,6 @@ void keyboard(unsigned char key, int x, int y)
         if (lose)
         {
             lose = false;
-
             glutPostRedisplay();
             newGame();
         }
@@ -645,18 +668,7 @@ void keyboard(unsigned char key, int x, int y)
         break;
     case 'l':
     case 'L':
-        if (setlight == light_on)
-        {
-            setlight = light_off;
-            glDisable(GL_LIGHT0);
-            glDisable(GL_LIGHTING);
-        }
-        else
-        {
-            setlight = light_on;
-            glEnable(GL_LIGHT0);
-            glEnable(GL_LIGHTING);
-        }
+        lightOn = !lightOn;
         break;
     case 'j':
     case 'J':
@@ -788,20 +800,16 @@ GLubyte *LoadPPM(char *file, int *width, int *height, int *max)
     fscanf(fd, "%[^\n] ", b);
     if (b[0] != 'P' || b[1] != '3')
     {
-        printf("%s is not a PPM file!\n", file);
         exit(0);
     }
-    printf("%s is a PPM file\n", file);
     fscanf(fd, "%c", &c);
     while (c == '#')
     {
         fscanf(fd, "%[^\n] ", b);
-        printf("%s\n", b);
         fscanf(fd, "%c", &c);
     }
     ungetc(c, fd);
     fscanf(fd, "%d %d %d", &n, &m, &k);
-    printf("%d rows  %d columns  max value= %d\n", n, m, k);
     nm = n * m;
     img = (GLubyte *)malloc(3 * sizeof(GLuint) * nm);
     s = 255.0 / k;
@@ -822,15 +830,14 @@ void init(void)
 {
     glClearColor(0, 0, 0, 0);
     glColor3f(1, 1, 1);
+    glMatrixMode(GL_PROJECTION);
+    gluPerspective(45, 1, 1, 1000);
 
     glEnable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
     glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
-
-    glMatrixMode(GL_PROJECTION);
-    gluPerspective(45, 1, 1, 1000);
 
     /* Texture */
     // enable texturing
@@ -861,7 +868,6 @@ void init(void)
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, stone_tex);
-
     // load coin texture
     coin_tex = LoadPPM("coin.ppm", &width, &height, &max);
     glBindTexture(GL_TEXTURE_2D, textures[3]);
