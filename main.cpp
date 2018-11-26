@@ -609,14 +609,17 @@ void display(void)
             glutStrokeCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }*/
 
-        std::string scoreString = std::to_string(score);
-        glRasterPos2i(45, 60);
-        std::string scoreDescription = "SCORE: " + scoreString;
-        for (std::string::iterator i = scoreDescription.begin(); i != scoreDescription.end(); ++i)
+        
+        glPushMatrix();
+        std::string scoreString2 = std::to_string(highscore);
+        glRasterPos2i(45, 40);
+        std::string scoreDescription2 = "The highest score is: " + scoreString2;
+        for (std::string::iterator i = scoreDescription2.begin(); i != scoreDescription2.end(); ++i)
         {
             char c = *i;
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
         }
+        glPopMatrix();
     }
     // reshape window (TODO)
     // glTranslatef(-1 * (SIZE_MAP / 2), 0, -1 * (SIZE_MAP / 2));
