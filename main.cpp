@@ -542,7 +542,7 @@ void display(void)
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
         }
         glRasterPos2i(-20, 290);
-        std::string instrucString2 = " arrow key : Campera Control   l : Turn on/off Light  q : Quit";
+        std::string instrucString2 = " arrow key : Camera Control   l : Turn on/off Light  q : Quit";
         for (std::string::iterator i = instrucString2.begin(); i != instrucString2.end(); ++i)
         {
             char c = *i;
