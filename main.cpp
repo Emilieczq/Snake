@@ -53,9 +53,11 @@ bool lightOn = true;                      // default light is on
 float light_pos[] = {150, -500, 150, 1}; //light's position
 float lightSpeed = 100.0f;
 
-/* Camera */
-float camPos[] = {100, -100, 300}; // camera's position
-float camSpeed = 2.0f;
+/* Eye */
+float eyeRotate[] = {0, 0};
+float eye[] = {100, -100, 300}; // eye's position
+float eyeSpeed = 2.0f;
+
 
 /**
  * Check if an int x is in a vector v
@@ -513,10 +515,20 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(camPos[0], camPos[1], camPos[2], SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0, 0, 1, 0);
+    gluLookAt(eye[0], eye[1], eye[2], SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0, 0, 1, 0);
 
     if (!lose)
     {
+        glPushMatrix();
+        //Scene rotation
+        glTranslatef(SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0);
+        glRotatef(eyeRotate[0], 1, 0, 0);
+        glTranslatef(-SIZE_CELL * SIZE_MAP / 2, -SIZE_CELL * SIZE_MAP / 2, 0);
+
+        glTranslatef(SIZE_CELL * SIZE_MAP / 2, SIZE_CELL * SIZE_MAP / 2, 0);
+        glRotatef(eyeRotate[1], 0, 1, 0);
+        glTranslatef(-SIZE_CELL * SIZE_MAP / 2, -SIZE_CELL * SIZE_MAP / 2, 0);
+
         // Enable lighting if light's on, light0 is enabled in init so no need to enable again
         if (lightOn)
             glEnable(GL_LIGHTING);
@@ -530,6 +542,7 @@ void display(void)
         glBindTexture(GL_TEXTURE_2D, 0); // disable texture binding for the following functions (no texture for fruit and snake now, can be added in the future)
         drawFruit();
         drawSnake();
+        glPopMatrix();
 
         /* display all words here */
         glDisable(GL_LIGHTING); // disable lighting on words
@@ -542,7 +555,7 @@ void display(void)
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
         }
         glRasterPos2i(-20, 290);
-        std::string instrucString2 = " arrow key : Camera Control   l : Turn on/off Light  q : Quit";
+        std::string instrucString2 = " arrow key : Scene Rotation   l : Turn on/off Light  q : Quit";
         for (std::string::iterator i = instrucString2.begin(); i != instrucString2.end(); ++i)
         {
             char c = *i;
@@ -701,23 +714,23 @@ void keyboard(unsigned char key, int x, int y)
 
 void special(int key, int x, int y)
 {
-    // arrow key presses control campera
+    // arrow key presses control scene
     switch (key)
     {
     case GLUT_KEY_UP:
-        camPos[1] += camSpeed;
+        eyeRotate[1] += eyeSpeed;
         break;
 
     case GLUT_KEY_DOWN:
-        camPos[1] -= camSpeed;
+        eyeRotate[1] -= eyeSpeed;
         break;
 
     case GLUT_KEY_LEFT:
-        camPos[2] += camSpeed;
+        eyeRotate[0] += eyeSpeed;
         break;
 
     case GLUT_KEY_RIGHT:
-        camPos[2] -= camSpeed;
+        eyeRotate[0] -= eyeSpeed;
         break;
     }
     glutPostRedisplay();
