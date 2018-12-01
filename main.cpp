@@ -49,8 +49,8 @@ int width, height, max;
 GLuint textures[4]; // change this number to add more textures
 
 /* Lighting */
-bool lightOn = true;                      // default light is on
-float light_pos[] = {150, -500, 150, 1}; //light's position
+bool lightOn = true;                     // default light is on
+float light_pos[] = {150, -500, 150, 1}; // light's position
 float lightSpeed = 100.0f;
 
 /* Eye */
@@ -58,6 +58,13 @@ float eyeRotate[] = {0, 0};
 float eye[] = {100, -100, 300}; // eye's position
 float eyeSpeed = 2.0f;
 
+/* Ray */
+struct Point
+{
+    double x;
+    double y;
+    double z;
+} m_start, m_end;
 
 /**
  * Check if an int x is in a vector v
@@ -189,7 +196,6 @@ void newGame(void)
 
 void grass(int i)
 {
-    // glColor3ub(0, 102, 0);
     glBindTexture(GL_TEXTURE_2D, textures[0]);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBegin(GL_QUADS);
@@ -213,7 +219,6 @@ void grass(int i)
 
 void pond(int i)
 {
-    // glColor3ub(0, 204, 255);
     glBindTexture(GL_TEXTURE_2D, textures[1]);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBegin(GL_QUADS);
@@ -238,8 +243,6 @@ void pond(int i)
 // Now we use cube to represent a stone
 void stone(int i)
 {
-    // glColor3ub(153, 153, 153);
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glBindTexture(GL_TEXTURE_2D, textures[2]);
     glBegin(GL_QUADS);
     int x = (i % SIZE_MAP) * SIZE_CELL;
@@ -336,6 +339,93 @@ void drawMap(void)
     }
 }
 
+void setRay(int mouseX, int mouseY)
+{
+    int viewport[4];
+    double matModelView[16], matProjection[16];
+
+    glGetDoublev(GL_MODELVIEW_MATRIX, matModelView);
+    glGetDoublev(GL_PROJECTION_MATRIX, matProjection);
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    // window pos of mouse, Y is inverted on windows
+    double winX = (double)mouseX;
+    double winY = viewport[3] - (double)mouseY;
+    // get point on the 'near' plan
+    gluUnProject(winX, winY, 0.0, matModelView, matProjection, viewport, &m_start.x, &m_start.y, &m_start.z);
+    // get point on the 'far' plan
+    gluUnProject(winX, winY, 1.0, matModelView, matProjection, viewport, &m_end.x, &m_end.y, &m_end.z);
+}
+
+bool rayBox(double *low, double *high, double *origin, double *destination)
+{
+    double direction[3];
+    // for each slab (X plane, Y plane, Z plane)
+    double tnear = std::numeric_limits<double>::min();
+    double tfar = std::numeric_limits<double>::max();
+    for (int i = 0; i < 3; i++)
+    {
+        direction[i] = destination[i] - origin[i];
+        if (direction[i] == 0) // parallel
+        {
+            if (origin[i] < low[i] || origin[i] > high[i])
+                return false;
+        }
+        else
+        {
+            double t1 = (low[i] - origin[i]) / direction[i];
+            double t2 = (high[i] - origin[i]) / direction[i];
+            if (t1 > t2) // swap t1, t2
+            {
+                double tmp = t1;
+                t1 = t2;
+                t2 = tmp;
+            }
+            if (t1 > tnear) // want largest tnear
+                tnear = t1;
+            if (t2 < tfar) // want smallest tfar
+                tfar = t2;
+            if (tnear > tfar) // box is missed
+                return false;
+            if (tfar < 0) // box behind ray origin
+                return false;
+        }
+    }
+    return true;
+}
+
+int rayTestObjects(int mouseX, int mouseY)
+{
+    setRay(mouseX, mouseY);
+
+    double ray_origin[] = {m_start.x, m_start.y, m_start.z};
+    double ray_destination[] = {m_end.x, m_end.y, m_end.z};
+
+    double minDistance = std::numeric_limits<double>::max();
+    int indexMin = -1;
+    for (int i = 0; i < indicesStone.size(); i++)
+    {
+        int index = indicesStone.at(i);
+        int x = (index % SIZE_MAP) * SIZE_CELL;
+        int y = (index / SIZE_MAP) * SIZE_CELL;
+        int z = 0.0;
+
+        double o_low[] = {x + SIZE_CELL , y + SIZE_CELL, z + SIZE_CELL};
+        double o_high[] = {x, y, z};
+
+        if (rayBox(o_low, o_high, ray_origin, ray_destination))
+        {
+            double distance = sqrt(pow(x - m_start.x, 2) + pow(y - m_start.y, 2) + pow(z - m_start.z, 2));
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                indexMin = i;
+            }
+        }
+    }
+    return indexMin;
+}
+
 /**
  * The idea of moving is to find the next position of the head and it becomes the head
  * then drop the last one
@@ -390,21 +480,25 @@ void move(int direction)
     // if next position has a pond
     else if (findIndex(indicesPond, indexNext))
     {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glColor4f(1, 1, 1, 0.3);
-// TO DO (For now, it just functions like normal)
 #ifdef __APPLE__
         std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
 #else
         Sleep(moveDelayTime);
 #endif
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4f(1, 1, 1, 0.3);
         snake.insert(snake.begin(), indexNext);
         snake.pop_back();
     }
     // if next position has a stone or its body, the snake dies and reset the map and the snake
     else if (findIndex(indicesStone, indexNext) || findIndex(snake, indexNext))
     {
+#ifdef __APPLE__
+        std::this_thread::sleep_for(std::chrono::milliseconds(moveDelayTime)); // control speed
+#else
+        Sleep(moveDelayTime);
+#endif
         lose = true;
         // keep wallet at the same amount? that way the user can continue to collect coins
         // and spend them in future games.
@@ -489,7 +583,6 @@ void drawCoin(void)
     gluQuadricDrawStyle(sphere, GLU_FILL);
     gluQuadricTexture(sphere, true);
     gluQuadricNormals(sphere, GLU_SMOOTH);
-    //glBindTexture(GL_TEXTURE_2D, textures[3]);
     gluSphere(sphere, SIZE_CELL / 2, 50, 50);
     glPopMatrix();
 
@@ -498,13 +591,13 @@ void drawCoin(void)
 
 void display(void)
 {
-    //set material
+    // set material
     float amb[] = {1.0, 0.5, 0.3, 0.3};
     float dif[] = {1.0, 0.5, 0.3, 1.0};
     float spec[] = {0.5, 0.5, 0.5, 1.0};
     float shiny = 50;
 
-    //enable material
+    // enable material
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, amb);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, dif);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec);
@@ -614,15 +707,6 @@ void display(void)
         }
         glPopMatrix();
 
-        /* glRasterPos2i(25, 50);
-        std::string titleR = "Press SPACE to restart the game. ";
-        for (std::string::iterator i = titleR.begin(); i != titleR.end(); ++i)
-        {
-            char c = *i;
-            glutStrokeCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-        }*/
-
-        
         glPushMatrix();
         std::string scoreString2 = std::to_string(highscore);
         glRasterPos2i(45, 40);
@@ -634,9 +718,6 @@ void display(void)
         }
         glPopMatrix();
     }
-    // reshape window (TODO)
-    // glTranslatef(-1 * (SIZE_MAP / 2), 0, -1 * (SIZE_MAP / 2));
-
     glutSwapBuffers();
 }
 
@@ -897,11 +978,46 @@ void init(void)
     newGame();
 }
 
+void mouse(int button, int state, int mouseX, int mouseY)
+{
+    switch (button)
+    {
+    case GLUT_LEFT_BUTTON:
+        if (state == GLUT_DOWN)
+        {
+            int i = rayTestObjects(mouseX, mouseY);
+            if (i!= -1)
+            {
+                if(currency>=5)
+                {
+                    currency -= 5;
+                    map.at(indicesStone.at(i)) = 1;
+                    indicesStone.erase(indicesStone.begin() + i);
+                }
+            }
+        }
+        break;
+    }
+    glutPostRedisplay();
+}
+
+void reshape(int w, int h)
+{
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45, ((w + 0.0f) / h), 1, 1000);
+
+    glMatrixMode(GL_MODELVIEW);
+    glViewport(0, 0, w, h);
+}
+
 void callbackInit()
 {
     glutDisplayFunc(display);
+    glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
     glutSpecialFunc(special);
+    glutMouseFunc(mouse);
 }
 
 int main(int argc, char **argv)
