@@ -39,11 +39,35 @@ There is a user interface rendered around the main game screen area. Using ```gl
 The following code snippet displays the possible commands for this program:
 
 ```
-Press w, a, s, d  to control the snake direction;  u, j, h, k : Light Control
-Press L to toggle the lighting
-Left click the mouse to eliminate obstacle, each elimination cost 5 coins.
-Press arrow keys for scene rotation.
-
+##########################################
+###########      COMMANDS      ###########
+##########################################
+#   Press the space bar to begin!        #
+##########################################
+#   'w' --> move the snake up            #
+#   's' --> move the snake down          #
+#   'a' --> move the snake left          #
+#   'd' --> move the snake right         #
+##########################################
+#   'l' --> toggle lighting on or off    #
+#   'u' --> change light (+y) position   #
+#   'j' --> change light (-y) position   #
+#   'k' --> change light (+z) position   #
+#   'h' --> change light (-z) position   #
+##########################################
+#    Arrow keys rotate the scene         #
+##########################################
+#   Left-click on an obstacle to         #
+#   eliminate it                         #
+#       (costs 5 currency)               #
+#                                        #
+#   Right-click to bring up menu         #
+#       (customize  speed and            #
+#       number of obstacles)             #
+##########################################
+#   'q' --> quit the game                #
+##########################################
+##########################################
 ```
 
 How to run: clone this repository, and in the correct directory type ```make```
