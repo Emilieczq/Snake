@@ -1,4 +1,5 @@
 # 3D Snake Game - 3GC3 Final Project
+**Zhenqi Chai 400223880, Shengyu Wu 400075340, Zihao Chen 00145956, Nico Stepan 001404582**
 
 ## Graphics Features
 
@@ -17,4 +18,21 @@ The alpha blending feature is implemented in the game and can be observed when t
 
 ### 4. Picking
 
-How to run: type ```make```
+Ray casting is implemented in this game such that the user can use currency to select and delete stone obstacles througout the map. Deleting an object requires 5 currency and can be achieved by **left-clicking** on an obstacle.
+
+### 5. Non-Geometric Primitives
+
+There is a user interface rendered around the main game screen area. Using ```gluBitMapCharacter```, we render a title with instructions, along with a section for currency and scores which are constantly changing as the game progresses. They are rendered in such a way that when the game map is rotated, using the **arrow keys**, their appearance is unaffected.
+
+## Instructions
+
+The following code snippet displays the possible commands for this program:
+
+```
+
+put the cout here
+
+
+```
+
+How to run: clone this repository, and in the correct directory type ```make```
