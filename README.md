@@ -1,6 +1,15 @@
 # 3D Snake Game - 3GC3 Final Project
-**Zhenqi Chai 400223880**  &nbsp; &nbsp;  **Nico Stepan 001404582** </br>
-**Shengyu Wu 400075340**   &nbsp; &nbsp;  **Zihao Chen 001405956**
+
+<p align="center" >
+Zhenqi Chai 400223880  &nbsp; &nbsp;  Nico Stepan 001404582</br>
+</p>
+<p align="center">
+Shengyu Wu 400075340   &nbsp; &nbsp;  Zihao Chen 001405956
+ </p>
+
+<p align="center">
+<img src="snakePic.png" width="400" />
+</p>
 
 ## Graphics Features
 
