@@ -410,7 +410,7 @@ int rayTestObjects(int mouseX, int mouseY)
         int y = (index / SIZE_MAP) * SIZE_CELL;
         int z = 0.0;
 
-        double o_low[] = {x + SIZE_CELL , y + SIZE_CELL, z + SIZE_CELL};
+        double o_low[] = {x + SIZE_CELL, y + SIZE_CELL, z + SIZE_CELL};
         double o_high[] = {x, y, z};
 
         if (rayBox(o_low, o_high, ray_origin, ray_destination))
@@ -986,9 +986,9 @@ void mouse(int button, int state, int mouseX, int mouseY)
         if (state == GLUT_DOWN)
         {
             int i = rayTestObjects(mouseX, mouseY);
-            if (i!= -1)
+            if (i != -1)
             {
-                if(currency>=5)
+                if (currency >= 5)
                 {
                     currency -= 5;
                     map.at(indicesStone.at(i)) = 1;
@@ -1010,7 +1010,6 @@ void reshape(int w, int h)
     glMatrixMode(GL_MODELVIEW);
     glViewport(0, 0, w, h);
 }
-
 void callbackInit()
 {
     glutDisplayFunc(display);
@@ -1019,15 +1018,22 @@ void callbackInit()
     glutSpecialFunc(special);
     glutMouseFunc(mouse);
 }
+void instruction(){
+    std::cout << "Press w, a, s, d  to control the snake direction;  u, j, h, k : Light Control.\n"
+              << "Press L to toggle the lighting.\n "
+              << "Left click the mouse to eliminate obstacle, each elimination cost 5 coins.\n"
+              << "Press arrow keys for scene rotation.\n";
+}
 
 int main(int argc, char **argv)
 {
+    instruction();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 800);
     glutInitWindowPosition(0, 0);
     glutCreateWindow("Snake");
-
+    
     callbackInit();
 
     glEnable(GL_DEPTH_TEST);
