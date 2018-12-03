@@ -31,7 +31,11 @@ The following code snippet displays the possible commands for this program:
 
 ```
 
-put the cout here
+
+Press w, a, s, d  to control the snake direction;  u, j, h, k : Light Control
+Press L to toggle the lighting
+Left click the mouse to eliminate obstacle, each elimination cost 5 coins.
+Press arrow keys for scene rotation.
 
 
 ```
