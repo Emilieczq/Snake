@@ -1,3 +1,14 @@
+/*
+3D Snake Game - 3GC3 Final Project
+
+
+Group members:
+Zhenqi Chai 400223880 |  Nico Stepan 001404582
+Shengyu Wu 400075340  |  Zihao Chen 001405956
+
+please see README.md for instructions and implemented features.
+*/
+
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
@@ -465,7 +476,7 @@ void move(int direction)
     if (indexNext == indexFruit)
     {
         score++;
-        printf("Score: %d\n", score);
+        //printf("Score: %d\n", score);
         snake.insert(snake.begin(), indexNext);
         newFruit();
     }
@@ -474,7 +485,7 @@ void move(int direction)
     {
         currency++;
         //printf("\nCoin picked up\n");
-        printf("    Wallet: $%d\n", currency);
+        //printf("    Wallet: $%d\n", currency);
         newCoin();
     }
     // if next position has a pond
@@ -500,10 +511,6 @@ void move(int direction)
         Sleep(moveDelayTime);
 #endif
         lose = true;
-        // keep wallet at the same amount? that way the user can continue to collect coins
-        // and spend them in future games.
-        //currency = 0;
-        //newGame();
     }
     // if next position is on grass
     else
@@ -1018,22 +1025,49 @@ void callbackInit()
     glutSpecialFunc(special);
     glutMouseFunc(mouse);
 }
-void instruction(){
-    std::cout << "Press w, a, s, d  to control the snake direction;  u, j, h, k : Light Control.\n"
-              << "Press L to toggle the lighting.\n "
-              << "Left click the mouse to eliminate obstacle, each elimination cost 5 coins.\n"
-              << "Press arrow keys for scene rotation.\n";
+void instructions()
+{
+    std::cout
+        << "##########################################\n"
+        << "###########      COMMANDS      ###########\n"
+        << "##########################################\n"
+        << "#   Press the space bar to begin!        #\n"
+        << "##########################################\n"
+        << "#   'w' --> move the snake up            #\n"
+        << "#   's' --> move the snake down          #\n"
+        << "#   'a' --> move the snake left          #\n"
+        << "#   'd' --> move the snake right         #\n"
+        << "##########################################\n"
+        << "#   'l' --> toggle lighting on or off    #\n"
+        << "#   'u' --> change light (+y) position   #\n"
+        << "#   'j' --> change light (-y) position   #\n"
+        << "#   'k' --> change light (+z) position   #\n"
+        << "#   'h' --> change light (-z) position   #\n"
+        << "##########################################\n"
+        << "#    Arrow keys rotate the scene         #\n"
+        << "##########################################\n"
+        << "#   Left-click on an obstacle to         #\n"
+        << "#   eliminate it                         #\n"
+        << "#       (costs 5 currency)               #\n"
+        << "#                                        #\n"
+        << "#   Right-click to bring up menu         #\n"
+        << "#       (customize  speed and            #\n"
+        << "#       number of obstacles)             #\n"
+        << "##########################################\n"
+        << "#   'q' --> quit the game                #\n"
+        << "##########################################\n"
+        << "##########################################\n";
 }
 
 int main(int argc, char **argv)
 {
-    instruction();
+    instructions();
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
     glutInitWindowSize(800, 800);
     glutInitWindowPosition(0, 0);
     glutCreateWindow("Snake");
-    
+
     callbackInit();
 
     glEnable(GL_DEPTH_TEST);
